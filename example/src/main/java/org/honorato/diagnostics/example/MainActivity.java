@@ -15,6 +15,7 @@ public class MainActivity extends DiagnosticsActivity {
     protected void setChecks() {
         super.setChecks();
 
+
         // Add your checks like this:
         // this.checks.add(new Check(this.getBaseContext()));
     }

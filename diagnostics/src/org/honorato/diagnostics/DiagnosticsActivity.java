@@ -5,14 +5,13 @@ import android.databinding.DataBindingUtil;
 import android.databinding.Observable;
 import android.databinding.ObservableArrayList;
 import android.databinding.ObservableList;
-import android.graphics.drawable.ColorDrawable;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.ListView;
 
@@ -37,24 +36,37 @@ public class DiagnosticsActivity extends AppCompatActivity {
 
     ChecksAdapter mAdapter;
 
+    public Toolbar mToolbar;
+
+    Color c;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_diagnostics);
-        setBar();
 
         ActivityDiagnosticsBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_diagnostics);
         mListView = binding.diagnosticsListview;
+
+        setBar();
         setChecks();
         runChecks();
+
     }
 
+
     protected void setBar() {
-        ActionBar actionBar = getSupportActionBar();
-        if (actionBar == null) {
-            return;
-        }
-        actionBar.setBackgroundDrawable(new ColorDrawable(ContextCompat.getColor(this, android.R.color.transparent)));
+        mToolbar = (Toolbar) findViewById(R.id.toolbar_home);
+        setSupportActionBar(mToolbar);
+    }
+
+    public void setBackgroundColor(Color c) {
+        mToolbar.setBackgroundColor(ContextCompat.getColor(this, R.color.primary));
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu, menu);
+        return true;
     }
 
     @Override
@@ -73,12 +85,6 @@ public class DiagnosticsActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu, menu);
-        return true;
-    }
 
     @Override
     protected void onResume() {

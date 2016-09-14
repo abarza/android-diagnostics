@@ -17,5 +17,6 @@
 
     <attr name="refreshIcon" format="reference" />
     <attr name="toolbarBackground" format="reference" />
+    <attr name="accentColor" format="reference" />
 
 </resources>

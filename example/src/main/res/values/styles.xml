@@ -8,6 +8,7 @@
         <item name="colorAccent">@color/colorAccent</item>
         <item name="refreshIcon">@drawable/ic_refresh_light</item>
         <item name="toolbarBackground">@color/primary_dark</item>
+        <item name="accentColor">@color/colorPrimaryDark</item>
     </style>
 
 </resources>

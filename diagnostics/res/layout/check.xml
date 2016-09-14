@@ -14,6 +14,15 @@
         android:layout_height="wrap_content"
         android:minHeight="72dp">
 
+      <ImageView
+          android:padding="16dp"
+          android:src="@{check.getStatusDrawable()}"
+          android:background="@{check.getStatusColor()}"
+          android:layout_width="72dp"
+          android:layout_height="match_parent"
+          android:layout_gravity="center_vertical|center_horizontal"
+          tools:ignore="ContentDescription" />
+
         <LinearLayout
             android:padding="16dp"
             android:layout_width="0dip"
@@ -36,14 +45,7 @@
 
         </LinearLayout>
 
-        <ImageView
-            android:padding="16dp"
-            android:src="@{check.getStatusDrawable()}"
-            android:background="@{check.getStatusColor()}"
-            android:layout_width="72dp"
-            android:layout_height="match_parent"
-            android:layout_gravity="center_vertical|center_horizontal"
-            tools:ignore="ContentDescription" />
+
 
     </LinearLayout>
 </layout>

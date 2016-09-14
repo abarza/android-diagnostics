@@ -65,7 +65,7 @@ public class DiagnosticsActivity extends AppCompatActivity {
     fab.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
-        Snackbar.make(view, "Actualizando información", Snackbar.LENGTH_LONG).show();
+        Snackbar.make(view, R.string.refreshing, Snackbar.LENGTH_LONG).show();
         setChecks();
         runChecks();
       }

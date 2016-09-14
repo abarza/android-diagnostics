@@ -30,4 +30,5 @@
     <string name="static_network_warning">Su conexión es limitada, restringida o no disponible</string>
     <string name="time_offset">Su reloj está desfasado por</string>
     <string name="time_title">Sincronización de hora</string>
+  <string name="refreshing">Actualizando información...</string>
 </resources>

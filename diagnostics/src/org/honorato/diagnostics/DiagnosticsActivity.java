@@ -8,10 +8,11 @@ import android.databinding.ObservableList;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.view.View;
 import android.widget.ListView;
 
 import org.honorato.diagnostics.adapters.ChecksAdapter;
@@ -29,197 +30,187 @@ import java.util.Collections;
 
 public class DiagnosticsActivity extends AppCompatActivity {
 
-    protected ObservableList<Check> checks;
+  protected ObservableList<Check> checks;
 
-    ListView mListView;
+  ListView mListView;
 
-    ChecksAdapter mAdapter;
+  ChecksAdapter mAdapter;
 
-    public Toolbar mToolbar;
+  public Toolbar mToolbar;
 
-    Color c;
+  Color c;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
 
-        ActivityDiagnosticsBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_diagnostics);
-        mListView = binding.diagnosticsListview;
+    ActivityDiagnosticsBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_diagnostics);
+    mListView = binding.diagnosticsListview;
 
-        setBar();
+    setBar();
+    setFloatingActionButton();
+    setChecks();
+    runChecks();
+
+  }
+
+
+  protected void setBar() {
+    mToolbar = (Toolbar) findViewById(R.id.toolbar_home);
+    setSupportActionBar(mToolbar);
+  }
+
+  protected void setFloatingActionButton() {
+    FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+    fab.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View view) {
+        Snackbar.make(view, R.string.refreshing, Snackbar.LENGTH_LONG).show();
         setChecks();
         runChecks();
+      }
+    });
+  }
 
+  @Override
+  protected void onResume() {
+    super.onResume();
+
+    if (checks == null) {
+      setChecks();
+    } else {
+      registerChecksCallbacks();
+    }
+  }
+
+  protected void setChecks() {
+    Context context = this.getBaseContext();
+    checks = new ObservableArrayList<>();
+    checks.add(new BatteryCheck(context));
+    checks.add(new DiskCheck(context));
+    checks.add(new MemoryCheck(context));
+    checks.add(new TimeCheck(context));
+    checks.add(new NetworkStaticCheck(context));
+    checks.add(new NetworkQualityCheck(context));
+    checks.add(new GpsCheck(context));
+
+    mAdapter = new ChecksAdapter(context, checks);
+    mListView.setAdapter(mAdapter);
+
+    registerChecksCallbacks();
+  }
+
+  protected void runChecks() {
+    if (checks == null) {
+      return;
+    }
+    for (Check c : checks) {
+      c.run();
+    }
+  }
+
+  @Override
+  protected void onPause() {
+    cancelChecks();
+    super.onPause();
+  }
+
+  protected void cancelChecks() {
+    if (checks == null) {
+      return;
+    }
+    for (Check c : checks) {
+      c.cancel();
     }
 
+    unregisterChecksCallbacks();
+  }
 
-    protected void setBar() {
-        mToolbar = (Toolbar) findViewById(R.id.toolbar_home);
-        setSupportActionBar(mToolbar);
+  Observable.OnPropertyChangedCallback mCallback;
+  ObservableList.OnListChangedCallback mListCallback;
+
+  protected void registerChecksCallbacks() {
+    if (mCallback == null) {
+      mCallback = new Observable.OnPropertyChangedCallback() {
+        @Override
+        public void onPropertyChanged(Observable sender, int propertyId) {
+          sortChecks();
+        }
+      };
+    }
+    for (Check c : this.checks) {
+      registerCheckCallback(c);
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu, menu);
-        return true;
+    if (mListCallback == null) {
+      mListCallback = new ObservableList.OnListChangedCallback() {
+
+
+        @Override
+        public void onChanged(ObservableList sender) {
+
+        }
+
+        @Override
+        public void onItemRangeChanged(ObservableList sender, int positionStart, int itemCount) {
+
+        }
+
+        @Override
+        public void onItemRangeInserted(ObservableList sender, int positionStart, int itemCount) {
+          for (int i = positionStart; i < (positionStart + itemCount); i++) {
+            registerCheckCallback((Check) sender.get(i));
+          }
+        }
+
+        @Override
+        public void onItemRangeMoved(ObservableList sender, int fromPosition, int toPosition, int itemCount) {
+
+        }
+
+        @Override
+        public void onItemRangeRemoved(ObservableList sender, int positionStart, int itemCount) {
+          for (int i = positionStart; i < (positionStart + itemCount); i++) {
+            unregisterCheckCallback((Check) sender.get(i));
+          }
+        }
+      };
+
     }
+    this.checks.addOnListChangedCallback(mListCallback);
+  }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int itemId = item.getItemId();
-        // Note: resource id switch statements cannot be used
-        // in Android library modules
-        if (itemId == R.id.action_refresh) {
-            setChecks();
-            runChecks();
-            return true;
-        } else if (itemId == android.R.id.home) {
-            finish();
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
+  protected void registerCheckCallback(@NonNull Check c) {
+    if (mCallback == null) {
+      return;
     }
+    c.status.addOnPropertyChangedCallback(mCallback);
+  }
 
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        if (checks == null) {
-            setChecks();
-        } else {
-            registerChecksCallbacks();
-        }
+  protected void unregisterChecksCallbacks() {
+    if (mCallback != null) {
+      for (Check c : this.checks) {
+        unregisterCheckCallback(c);
+      }
     }
-
-    protected void setChecks() {
-        Context context = this.getBaseContext();
-        checks = new ObservableArrayList<>();
-        checks.add(new BatteryCheck(context));
-        checks.add(new DiskCheck(context));
-        checks.add(new MemoryCheck(context));
-        checks.add(new TimeCheck(context));
-        checks.add(new NetworkStaticCheck(context));
-        checks.add(new NetworkQualityCheck(context));
-        checks.add(new GpsCheck(context));
-
-        mAdapter = new ChecksAdapter(context, checks);
-        mListView.setAdapter(mAdapter);
-
-        registerChecksCallbacks();
+    if (mListCallback != null) {
+      this.checks.removeOnListChangedCallback(mListCallback);
     }
+  }
 
-    protected void runChecks() {
-        if (checks == null) {
-            return;
-        }
-        for (Check c : checks) {
-            c.run();
-        }
+  protected void unregisterCheckCallback(Check c) {
+    if (mCallback == null) {
+      return;
     }
+    c.status.removeOnPropertyChangedCallback(mCallback);
+  }
 
-    @Override
-    protected void onPause() {
-        cancelChecks();
-        super.onPause();
+  protected void sortChecks() {
+    if (checks == null) {
+      return;
     }
+    Collections.sort(checks);
 
-    protected void cancelChecks() {
-        if (checks == null) {
-            return;
-        }
-        for (Check c : checks) {
-            c.cancel();
-        }
-
-        unregisterChecksCallbacks();
-    }
-
-    Observable.OnPropertyChangedCallback mCallback;
-    ObservableList.OnListChangedCallback mListCallback;
-
-    protected void registerChecksCallbacks() {
-        if (mCallback == null) {
-            mCallback = new Observable.OnPropertyChangedCallback() {
-                @Override
-                public void onPropertyChanged(Observable sender, int propertyId) {
-                    sortChecks();
-                }
-            };
-        }
-        for (Check c : this.checks) {
-            registerCheckCallback(c);
-        }
-
-        if (mListCallback == null) {
-            mListCallback = new ObservableList.OnListChangedCallback() {
-
-
-                @Override
-                public void onChanged(ObservableList sender) {
-
-                }
-
-                @Override
-                public void onItemRangeChanged(ObservableList sender, int positionStart, int itemCount) {
-
-                }
-
-                @Override
-                public void onItemRangeInserted(ObservableList sender, int positionStart, int itemCount) {
-                    for (int i = positionStart; i < (positionStart + itemCount); i++) {
-                        registerCheckCallback((Check) sender.get(i));
-                    }
-                }
-
-                @Override
-                public void onItemRangeMoved(ObservableList sender, int fromPosition, int toPosition, int itemCount) {
-
-                }
-
-                @Override
-                public void onItemRangeRemoved(ObservableList sender, int positionStart, int itemCount) {
-                    for (int i = positionStart; i < (positionStart + itemCount); i++) {
-                        unregisterCheckCallback((Check) sender.get(i));
-                    }
-                }
-            };
-
-        }
-        this.checks.addOnListChangedCallback(mListCallback);
-    }
-
-    protected void registerCheckCallback(@NonNull Check c) {
-        if (mCallback == null) {
-            return;
-        }
-        c.status.addOnPropertyChangedCallback(mCallback);
-    }
-
-    protected void unregisterChecksCallbacks() {
-        if (mCallback != null) {
-            for (Check c : this.checks) {
-                unregisterCheckCallback(c);
-            }
-        }
-        if (mListCallback != null) {
-            this.checks.removeOnListChangedCallback(mListCallback);
-        }
-    }
-
-    protected void unregisterCheckCallback(Check c) {
-        if (mCallback == null) {
-            return;
-        }
-        c.status.removeOnPropertyChangedCallback(mCallback);
-    }
-
-    protected void sortChecks() {
-        if (checks == null) {
-            return;
-        }
-        Collections.sort(checks);
-
-        mAdapter.notifyDataSetChanged();
-    }
+    mAdapter.notifyDataSetChanged();
+  }
 }

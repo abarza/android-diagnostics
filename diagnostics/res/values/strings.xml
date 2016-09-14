@@ -36,4 +36,5 @@
 
     <string name="time_title">Time sync</string>
     <string name="time_offset">Your clock is off by</string>
+  <string name="refreshing">Updating information...</string>
 </resources>
